@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Clicker</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #2c3e50; color: white; padding-top: 50px; }
+        .stats { font-size: 2rem; margin-bottom: 20px; color: #f1c40f; }
+        #click-btn { padding: 20px 40px; font-size: 1.5rem; cursor: pointer; background: #e74c3c; border: none; border-radius: 10px; color: white; transition: transform 0.1s; }
+        #click-btn:active { transform: scale(0.95); }
+        .shop { margin-top: 40px; display: flex; justify-content: center; gap: 20px; }
+        .upgrade { background: #34495e; padding: 15px; border-radius: 8px; border: 1px solid #7f8c8d; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="stats">Score: <span id="score">0</span></div>
+    <button id="click-btn">CLICK ME!</button>
+
+    <div class="shop">
+        <div class="upgrade">
+            <p>Auto-Clicker (Cost: <span id="cost">10</span>)</p>
+            <button id="buy-upgrade">Buy Upgrade</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let autoClickers = 0;
+        let upgradeCost = 10;
+
+        const scoreDisplay = document.getElementById('score');
+        const clickBtn = document.getElementById('click-btn');
+        const buyBtn = document.getElementById('buy-upgrade');
+        const costDisplay = document.getElementById('cost');
+
+        // Manual Click
+        clickBtn.addEventListener('click', () => {
+            score++;
+            updateUI();
+        });
+
+        // Buy Upgrade
+        buyBtn.addEventListener('click', () => {
+            if (score >= upgradeCost) {
+                score -= upgradeCost;
+                autoClickers++;
+                upgradeCost = Math.round(upgradeCost * 1.5);
+                updateUI();
+            }
+        });
+
+        // Auto-Clicker Logic (Runs every second)
+        setInterval(() => {
+            if (autoClickers > 0) {
+                score += autoClickers;
+                updateUI();
+            }
+        }, 1000);
+
+        function updateUI() {
+            scoreDisplay.innerText = score;
+            costDisplay.innerText = upgradeCost;
+            buyBtn.disabled = score < upgradeCost;
+        }
+    </script>
+</body>
+</html>
