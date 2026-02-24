@@ -3,67 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Clicker</title>
+    <title>Advanced Clicker</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #2c3e50; color: white; padding-top: 50px; }
-        .stats { font-size: 2rem; margin-bottom: 20px; color: #f1c40f; }
-        #click-btn { padding: 20px 40px; font-size: 1.5rem; cursor: pointer; background: #e74c3c; border: none; border-radius: 10px; color: white; transition: transform 0.1s; }
-        #click-btn:active { transform: scale(0.95); }
-        .shop { margin-top: 40px; display: flex; justify-content: center; gap: 20px; }
-        .upgrade { background: #34495e; padding: 15px; border-radius: 8px; border: 1px solid #7f8c8d; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: #eee; padding: 20px; }
+        .stats-panel { background: #333; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: inline-block; }
+        #click-btn { width: 200px; height: 200px; border-radius: 50%; border: 8px solid #444; background: #e74c3c; color: white; font-size: 24px; cursor: pointer; transition: 0.1s; }
+        #click-btn:active { transform: scale(0.9); }
+        .shop { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; max-width: 800px; margin: 20px auto; }
+        .upgrade-card { background: #2c3e50; padding: 15px; border-radius: 8px; border: 2px solid #34495e; }
+        .upgrade-card button { width: 100%; padding: 10px; margin-top: 10px; cursor: pointer; font-weight: bold; }
+        button:disabled { filter: grayscale(1); cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <div class="stats">Score: <span id="score">0</span></div>
-    <button id="click-btn">CLICK ME!</button>
+    <div class="stats-panel">
+        <h1>Score: <span id="score">0</span></h1>
+        <p>Per Click: <span id="per-click">1</span> | Per Second: <span id="per-sec">0</span></p>
+    </div>
+
+    <div><button id="click-btn">CLICK!</button></div>
 
     <div class="shop">
-        <div class="upgrade">
-            <p>Auto-Clicker (Cost: <span id="cost">10</span>)</p>
-            <button id="buy-upgrade">Buy Upgrade</button>
+        <!-- Manual Upgrade -->
+        <div class="upgrade-card">
+            <h3>Sharper Tools</h3>
+            <p>+1 per click</p>
+            <p>Cost: <span id="u1-cost">15</span></p>
+            <button onclick="buyUpgrade('clickPower')">Upgrade Click</button>
+        </div>
+        <!-- Auto Upgrade 1 -->
+        <div class="upgrade-card">
+            <h3>Auto-Bot v1</h3>
+            <p>+1 per second</p>
+            <p>Cost: <span id="u2-cost">50</span></p>
+            <button onclick="buyUpgrade('bot1')">Buy Bot</button>
+        </div>
+        <!-- Auto Upgrade 2 -->
+        <div class="upgrade-card">
+            <h3>Mega-Drone</h3>
+            <p>+10 per second</p>
+            <p>Cost: <span id="u3-cost">500</span></p>
+            <button onclick="buyUpgrade('bot2')">Buy Drone</button>
         </div>
     </div>
 
     <script>
-        let score = 0;
-        let autoClickers = 0;
-        let upgradeCost = 10;
+        let game = {
+            score: 0,
+            clickPower: 1,
+            perSecond: 0,
+            upgrades: {
+                clickPower: { cost: 15, increase: 1, type: 'manual' },
+                bot1: { cost: 50, increase: 1, type: 'auto' },
+                bot2: { cost: 500, increase: 10, type: 'auto' }
+            }
+        };
 
-        const scoreDisplay = document.getElementById('score');
-        const clickBtn = document.getElementById('click-btn');
-        const buyBtn = document.getElementById('buy-upgrade');
-        const costDisplay = document.getElementById('cost');
+        const scoreEl = document.getElementById('score');
+        const perClickEl = document.getElementById('per-click');
+        const perSecEl = document.getElementById('per-sec');
 
-        // Manual Click
-        clickBtn.addEventListener('click', () => {
-            score++;
+        document.getElementById('click-btn').onclick = () => {
+            game.score += game.clickPower;
             updateUI();
-        });
+        };
 
-        // Buy Upgrade
-        buyBtn.addEventListener('click', () => {
-            if (score >= upgradeCost) {
-                score -= upgradeCost;
-                autoClickers++;
-                upgradeCost = Math.round(upgradeCost * 1.5);
+        function buyUpgrade(id) {
+            let up = game.upgrades[id];
+            if (game.score >= up.cost) {
+                game.score -= up.cost;
+                if (up.type === 'manual') game.clickPower += up.increase;
+                if (up.type === 'auto') game.perSecond += up.increase;
+                
+                // Exponential cost scaling (1.15x per purchase)
+                up.cost = Math.ceil(up.cost * 1.15); 
                 updateUI();
             }
-        });
+        }
 
-        // Auto-Clicker Logic (Runs every second)
+        // Auto-production loop (runs every 100ms for smoother updates)
         setInterval(() => {
-            if (autoClickers > 0) {
-                score += autoClickers;
-                updateUI();
-            }
-        }, 1000);
+            game.score += game.perSecond / 10;
+            updateUI();
+        }, 100);
 
         function updateUI() {
-            scoreDisplay.innerText = score;
-            costDisplay.innerText = upgradeCost;
-            buyBtn.disabled = score < upgradeCost;
+            scoreEl.innerText = Math.floor(game.score);
+            perClickEl.innerText = game.clickPower;
+            perSecEl.innerText = game.perSecond;
+            
+            // Update button texts and states
+            Object.keys(game.upgrades).forEach((id, index) => {
+                const up = game.upgrades[id];
+                const costSpan = document.getElementById(`u${index+1}-cost`);
+                const btn = costSpan.parentElement.nextElementSibling;
+                costSpan.innerText = up.cost;
+                btn.disabled = game.score < up.cost;
+            });
         }
     </script>
 </body>
